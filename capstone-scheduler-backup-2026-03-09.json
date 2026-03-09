@@ -1,0 +1,116 @@
+{
+  "_app": "capstone-scheduler",
+  "_exportedAt": "2026-03-09T01:17:08.561Z",
+  "classes": [
+    {
+      "id": "class-1",
+      "name": "ICT 946 Capstone Project( Wednesday)",
+      "day": "Wednesday",
+      "startTime": "11:30",
+      "endTime": "14:30",
+      "slotMinutes": 20,
+      "groups": [
+        {
+          "id": "grp-1773015267638-ws14",
+          "name": "Group 1",
+          "project": "Password Manager",
+          "members": [
+            "Nitin MEHTA",
+            "BALJINDER SING",
+            "Suman PURI",
+            "Noshin Tabassum"
+          ]
+        },
+        {
+          "id": "grp-1773015312388-432j",
+          "name": "Group 2",
+          "project": "Online Terrorism Detection Using ML",
+          "members": [
+            "Arun KOIRALA",
+            "Khagendra NEUP",
+            "Manish KHATIW",
+            "Raghav THARU"
+          ]
+        },
+        {
+          "id": "grp-1773015350782-c3pe",
+          "name": "Group 3",
+          "project": "SMS Spam Detection Using ML",
+          "members": [
+            "Man Mahendrab",
+            "NISHU NISHU",
+            "Ankit SHARMA"
+          ]
+        },
+        {
+          "id": "grp-1773015395487-sp52",
+          "name": "Group 4",
+          "project": "Secure Restaurant Table Management",
+          "members": [
+            "Md Abdur RAH",
+            "Tsendu Yeshey",
+            "Tshojay LHAMO",
+            "Varsha"
+          ]
+        },
+        {
+          "id": "grp-1773015471387-dv12",
+          "name": "Group 5",
+          "project": "Automated Vulnerability Assessment Toolkit",
+          "members": [
+            "Prabin BASHYAL",
+            "Ayush Man Singh",
+            "Nikhil SHRESTHA",
+            "Praquesh TANDU"
+          ]
+        },
+        {
+          "id": "grp-1773015502470-dhdx",
+          "name": "Group 6",
+          "project": "Credit Card Fraud Detection Using ML",
+          "members": [
+            "Nabin DUTHRAJ",
+            "Prashan MANAN",
+            "Raju KHATRI",
+            "Ritman ROKA"
+          ]
+        },
+        {
+          "id": "grp-1773016274606-e4lu",
+          "name": "Group 8",
+          "project": "EV Charging Station Slot Booking System",
+          "members": [
+            "Dinesh NIRAULA",
+            "Ajit PACHHAI CH",
+            "Sunil KARKI",
+            "Adarsha SHARMA"
+          ]
+        },
+        {
+          "id": "grp-1773016312355-9uum",
+          "name": "Group 9",
+          "project": "Secure Hospital Management",
+          "members": [
+            "Jenish PATEL",
+            "Yash",
+            "BHARTI",
+            "HARI OM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "class-2",
+      "name": "ICT 946 Capstone Project (Tuesday)",
+      "day": "Tuesday",
+      "startTime": "08:30",
+      "endTime": "11:15",
+      "slotMinutes": 20,
+      "groups": []
+    }
+  ],
+  "attendance": {
+    "class-2_2_grp-1772985017604-u6w2": "yes",
+    "class-2_2_grp-1772985031630-auns": "yes"
+  }
+}
