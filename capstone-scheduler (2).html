@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capstone Group Scheduler</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #1d4ed8;
+    --accent-light: #dbeafe;
+    --accent-glow: rgba(29,78,216,0.12);
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text2: #64748b;
+    --danger: #dc2626;
+    --danger-bg: #fee2e2;
+  }
+
+  body {
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #f0f4ff 0%, var(--bg) 50%, #fef9f0 100%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 28px 32px 20px; border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+    flex-wrap: wrap; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header h1 { font-size: 26px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+  .header p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .saving-dot { font-size: 12px; color: var(--accent); font-weight: 500; display: none; }
+  .btn-reset {
+    background: var(--danger-bg); color: #b91c1c; border: none; border-radius: 8px;
+    padding: 8px 16px; font-weight: 600; font-size: 13px; cursor: pointer;
+    font-family: inherit; transition: transform 0.1s;
+  }
+  .btn-reset:hover { transform: scale(1.03); }
+  .btn-export {
+    background: #ecfdf5; color: #065f46; border: none; border-radius: 8px;
+    padding: 8px 16px; font-weight: 600; font-size: 13px; cursor: pointer;
+    font-family: inherit; transition: transform 0.1s;
+  }
+  .btn-export:hover { transform: scale(1.03); }
+  .btn-import {
+    background: #eff6ff; color: var(--accent); border: none; border-radius: 8px;
+    padding: 8px 16px; font-weight: 600; font-size: 13px; cursor: pointer;
+    font-family: inherit; transition: transform 0.1s;
+  }
+  .btn-import:hover { transform: scale(1.03); }
+  #importFile { display: none; }
+  .import-msg {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #065f46; color: #fff; padding: 10px 24px; border-radius: 10px;
+    font-weight: 600; font-size: 14px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    animation: fadeInOut 2.5s ease forwards;
+  }
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    75% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  }
+
+  /* Attendance */
+  .att-btn {
+    padding: 5px 14px; border-radius: 6px; font-weight: 600; font-size: 12px;
+    cursor: pointer; font-family: inherit; border: 1.5px solid var(--border);
+    background: #f1f5f9; color: var(--text2); transition: all 0.15s; min-width: 36px;
+  }
+  .att-btn:hover { transform: scale(1.05); }
+  .att-btn.yes { background: #dcfce7; color: #166534; border-color: #86efac; }
+  .att-btn.no { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+  .att-group { display: flex; gap: 4px; align-items: center; }
+  .att-status-yes { color: #166534; font-weight: 700; font-size: 12px; }
+  .att-status-no { color: #991b1b; font-weight: 700; font-size: 12px; }
+  .att-status-pending { color: #94a3b8; font-size: 12px; }
+  tr.row-missed td { background: #fff5f5 !important; }
+  tr.row-attended td { background: #f0fdf4 !important; }
+
+  /* Missed Panel */
+  .missed-panel {
+    background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px;
+    padding: 16px 20px; margin-top: 16px;
+  }
+  .missed-panel h4 {
+    font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .missed-panel .missed-count {
+    background: #dc2626; color: #fff; font-size: 11px; padding: 2px 8px;
+    border-radius: 10px; font-weight: 700;
+  }
+  .missed-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; border-radius: 8px; margin-bottom: 6px;
+    background: rgba(255,255,255,0.7); border: 1px solid #fde68a;
+  }
+  .missed-item strong { font-size: 13px; }
+  .missed-item .missed-detail { font-size: 12px; color: #92400e; margin-top: 2px; }
+  .all-attended {
+    background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px;
+    padding: 16px 20px; margin-top: 16px; color: #166534; font-weight: 600;
+    font-size: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .summary-bar {
+    display: flex; gap: 16px; align-items: center; margin-top: 12px;
+    padding: 10px 16px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 13px; flex-wrap: wrap;
+  }
+  .summary-stat { display: flex; align-items: center; gap: 6px; }
+  .dot-green { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+  .dot-red { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+  .dot-gray { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 0; border-bottom: 2px solid var(--border);
+    background: rgba(255,255,255,0.7); padding: 0 32px;
+  }
+  .tab-btn {
+    padding: 14px 24px; border: none; background: transparent; cursor: pointer;
+    font-size: 14px; font-weight: 600; color: var(--text2); font-family: inherit;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+  }
+  .tab-btn.active { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* Class Tabs */
+  .class-tabs { display: flex; gap: 10px; padding: 16px 32px; flex-wrap: wrap; }
+  .class-tab {
+    padding: 10px 20px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--card); cursor: pointer; text-align: left; font-size: 13px;
+    font-weight: 600; color: var(--text2); font-family: inherit; transition: all 0.15s;
+  }
+  .class-tab.active {
+    border-color: var(--accent); background: var(--accent-light);
+    font-weight: 700; color: var(--accent); box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .class-tab small { display: block; font-size: 11px; font-weight: 400; opacity: 0.7; margin-top: 2px; }
+
+  /* Content */
+  .content { padding: 20px 32px 60px; max-width: 960px; margin: 0 auto; }
+  .section-title { font-size: 15px; font-weight: 700; margin: 28px 0 12px; }
+  .empty-msg { color: var(--text2); font-size: 13px; font-style: italic; padding: 12px 0; }
+
+  /* Settings Row */
+  .settings-row {
+    display: flex; gap: 12px; flex-wrap: wrap; background: var(--card);
+    padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px;
+  }
+  .form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+  .form-field label { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .form-field .hint { font-weight: 400; color: #94a3b8; }
+  .form-field input, .form-field select {
+    padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 14px; color: var(--text); background: #f8fafc; font-family: inherit;
+    outline: none; transition: border 0.2s;
+  }
+  .form-field input:focus, .form-field select:focus { border-color: var(--accent); }
+
+  /* Capacity */
+  .capacity-bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: var(--accent-light); border-radius: 10px; font-size: 13px;
+    color: var(--accent); margin-bottom: 4px; flex-wrap: wrap;
+  }
+  .capacity-bar .hint { font-size: 11px; opacity: 0.7; }
+
+  /* Form Card */
+  .form-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn-add {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 10px 20px; font-weight: 700; font-size: 14px; cursor: pointer;
+    font-family: inherit; align-self: flex-start; transition: transform 0.1s;
+  }
+  .btn-add:hover { transform: scale(1.03); }
+  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Group List */
+  .group-list { display: flex; flex-direction: column; gap: 8px; }
+  .group-chip {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; transition: box-shadow 0.15s;
+  }
+  .group-chip:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .group-chip strong { font-size: 14px; display: block; }
+  .group-chip .project { font-size: 12px; color: var(--accent); font-weight: 500; margin-top: 2px; }
+  .group-chip .members { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .btn-remove {
+    background: var(--danger-bg); color: var(--danger); border: none; border-radius: 6px;
+    width: 28px; height: 28px; cursor: pointer; font-weight: 700; font-size: 14px;
+    flex-shrink: 0; font-family: inherit; transition: transform 0.1s;
+  }
+  .btn-remove:hover { transform: scale(1.1); }
+
+  /* Week Selector */
+  .week-selector { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .week-label { font-weight: 700; font-size: 14px; }
+  .week-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .week-btn {
+    width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: var(--card); cursor: pointer; font-weight: 600; font-size: 14px;
+    color: var(--text2); display: flex; align-items: center; justify-content: center;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .week-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .week-btn.active {
+    border-color: var(--accent); background: var(--accent); color: #fff;
+    font-weight: 700; box-shadow: 0 2px 8px rgba(29,78,216,0.25);
+  }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--card); margin-bottom: 16px;
+  }
+  .schedule-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .schedule-badge {
+    background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 20px;
+    font-weight: 700; font-size: 12px;
+  }
+  .schedule-day { font-size: 13px; font-weight: 600; color: var(--text2); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 14px; font-weight: 700; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2);
+    border-bottom: 1px solid var(--border); background: #f8fafc;
+  }
+  th:first-child { width: 50px; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  .td-time { font-weight: 600; white-space: nowrap; }
+  .td-group { font-weight: 600; }
+  .member-count { color: var(--text2); font-size: 11px; }
+
+  /* Details / Accordion */
+  details {
+    margin-top: 24px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--card); overflow: hidden;
+  }
+  summary {
+    padding: 14px 20px; cursor: pointer; font-weight: 700; font-size: 14px;
+    color: var(--accent); background: #f8fafc; user-select: none;
+  }
+  summary:hover { background: var(--accent-light); }
+  .print-section { padding: 20px 24px; }
+  .print-title {
+    font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 20px;
+    border-bottom: 2px solid var(--accent); padding-bottom: 8px;
+  }
+  .print-class-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+  .print-time { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+
+  .hidden { display: none; }
+
+  @media print {
+    .header, .tabs, .class-tabs, .week-selector, .btn-add, .btn-remove, .btn-reset,
+    .form-card, .settings-row, .capacity-bar, summary { display: none !important; }
+    .content { padding: 0; }
+    details { border: none; }
+    details[open] .print-section { display: block; }
+  }
+
+  @media (max-width: 600px) {
+    .header { padding: 20px 16px 16px; }
+    .header h1 { font-size: 20px; }
+    .tabs { padding: 0 16px; }
+    .class-tabs { padding: 12px 16px; }
+    .content { padding: 16px 16px 48px; }
+    .settings-row { padding: 12px; }
+    .form-card { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>Capstone Scheduler</h1>
+    <p>Randomised weekly group supervision slots</p>
+  </div>
+  <div class="header-right">
+    <span class="saving-dot" id="savingDot">Saving…</span>
+    <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+    <button class="btn-import" onclick="document.getElementById('importFile').click()">📥 Import</button>
+    <button class="btn-export" onclick="exportData()">📤 Export</button>
+    <button class="btn-reset" onclick="resetAll()">Reset All</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="schedule" onclick="switchTab('schedule')">📅 Weekly Schedule</button>
+  <button class="tab-btn" data-tab="setup" onclick="switchTab('setup')">⚙️ Setup Groups</button>
+</nav>
+
+<!-- Class Tabs -->
+<div class="class-tabs" id="classTabs"></div>
+
+<!-- Content -->
+<div class="content" id="mainContent"></div>
+
+<script>
+// ===================== DATA & STATE =====================
+const STORAGE_KEY = "capstone-scheduler-data";
+const WEEKS = [2,3,4,5,6,7,8,9,10,11];
+
+const defaultClasses = [
+  {
+    id: "class-1", name: "Capstone Project (Wednesday)", day: "Wednesday",
+    startTime: "11:30", endTime: "14:30", slotMinutes: 20, groups: []
+  },
+  {
+    id: "class-2", name: "Unit (Tuesday)", day: "Tuesday",
+    startTime: "08:30", endTime: "11:15", slotMinutes: 20, groups: []
+  }
+];
+
+let state = {
+  classes: JSON.parse(JSON.stringify(defaultClasses)),
+  attendance: {},  // key: "classId_week_groupId" → "yes" | "no"
+  activeTab: "schedule",
+  activeClassIdx: 0,
+  selectedWeek: 2
+};
+
+// ===================== PERSISTENCE =====================
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.classes) state.classes = parsed.classes;
+      if (parsed.attendance) state.attendance = parsed.attendance;
+    }
+  } catch(e) {}
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ classes: state.classes, attendance: state.attendance }));
+    const dot = document.getElementById("savingDot");
+    dot.style.display = "inline";
+    setTimeout(() => dot.style.display = "none", 800);
+  } catch(e) {}
+}
+
+// ===================== UTILS =====================
+function seededShuffle(array, seed) {
+  const arr = [...array];
+  let s = seed;
+  const next = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function timeToMinutes(t) {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(m) {
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  const period = h >= 12 ? "PM" : "AM";
+  const dh = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${dh}:${min.toString().padStart(2, "0")} ${period}`;
+}
+
+function getMaxSlots(cls) {
+  return Math.floor((timeToMinutes(cls.endTime) - timeToMinutes(cls.startTime)) / cls.slotMinutes);
+}
+
+function generateSchedule(cls, week) {
+  if (!cls.groups.length) return [];
+  const seed = week * 10000 + cls.id.charCodeAt(cls.id.length - 1) * 100;
+  const shuffled = seededShuffle(cls.groups, seed);
+  const startMin = timeToMinutes(cls.startTime);
+  return shuffled.map((g, i) => ({
+    ...g,
+    slotStart: minutesToTime(startMin + i * cls.slotMinutes),
+    slotEnd: minutesToTime(startMin + (i + 1) * cls.slotMinutes),
+    order: i + 1
+  }));
+}
+
+function uid() { return 'grp-' + Date.now() + '-' + Math.random().toString(36).slice(2,6); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ===================== RENDER =====================
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  render();
+}
+
+function setActiveClass(idx) {
+  state.activeClassIdx = idx;
+  render();
+}
+
+function setWeek(w) {
+  state.selectedWeek = w;
+  render();
+}
+
+function renderClassTabs() {
+  const el = document.getElementById("classTabs");
+  el.innerHTML = state.classes.map((c, i) => `
+    <button class="class-tab ${i === state.activeClassIdx ? 'active' : ''}" onclick="setActiveClass(${i})">
+      ${esc(c.name)}
+      <small>${c.groups.length} group${c.groups.length !== 1 ? 's' : ''}</small>
+    </button>
+  `).join('');
+}
+
+function attKey(classId, week, groupId) {
+  return `${classId}_${week}_${groupId}`;
+}
+
+function getAtt(classId, week, groupId) {
+  return state.attendance[attKey(classId, week, groupId)] || '';
+}
+
+function toggleAttendance(classId, week, groupId, value) {
+  const key = attKey(classId, week, groupId);
+  const current = state.attendance[key] || '';
+  // Toggle: if same value clicked, clear it; otherwise set it
+  if (current === value) {
+    delete state.attendance[key];
+  } else {
+    state.attendance[key] = value;
+  }
+  saveData();
+  render();
+}
+
+function renderScheduleTable(schedule, cls, week, interactive) {
+  if (!schedule.length) return `<p class="empty-msg">No groups to schedule. Add groups in the Setup tab.</p>`;
+  return `
+    <div class="table-wrap">
+      <div class="schedule-header">
+        <span class="schedule-badge">Week ${week}</span>
+        <span class="schedule-day">${esc(cls.day)} — ${minutesToTime(timeToMinutes(cls.startTime))} to ${minutesToTime(timeToMinutes(cls.endTime))}</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Time Slot</th><th>Group</th><th>Project</th><th>Members</th>
+          ${interactive ? '<th style="width:120px">Attended?</th>' : ''}
+        </tr></thead>
+        <tbody>
+          ${schedule.map((s, i) => {
+            const att = getAtt(cls.id, week, s.id);
+            const rowClass = interactive ? (att === 'yes' ? 'row-attended' : att === 'no' ? 'row-missed' : '') : '';
+            return `
+            <tr class="${rowClass}">
+              <td>${s.order}</td>
+              <td class="td-time">${s.slotStart} – ${s.slotEnd}</td>
+              <td class="td-group">${esc(s.name)}</td>
+              <td>${esc(s.project)}</td>
+              <td>${esc(s.members.join(', '))} <span class="member-count">(${s.members.length})</span></td>
+              ${interactive ? `
+                <td>
+                  <div class="att-group">
+                    <button class="att-btn ${att === 'yes' ? 'yes' : ''}" onclick="toggleAttendance('${cls.id}',${week},'${s.id}','yes')">✓ Yes</button>
+                    <button class="att-btn ${att === 'no' ? 'no' : ''}" onclick="toggleAttendance('${cls.id}',${week},'${s.id}','no')">✕ No</button>
+                  </div>
+                </td>
+              ` : ''}
+            </tr>
+          `}).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderMissedPanel(schedule, cls, week) {
+  if (!schedule.length) return '';
+  const missed = schedule.filter(s => getAtt(cls.id, week, s.id) === 'no');
+  const attended = schedule.filter(s => getAtt(cls.id, week, s.id) === 'yes');
+  const pending = schedule.filter(s => !getAtt(cls.id, week, s.id));
+
+  let html = `<div class="summary-bar">
+    <span class="summary-stat"><span class="dot-green"></span> Attended: <strong>${attended.length}</strong></span>
+    <span class="summary-stat"><span class="dot-red"></span> Missed: <strong>${missed.length}</strong></span>
+    <span class="summary-stat"><span class="dot-gray"></span> Pending: <strong>${pending.length}</strong></span>
+  </div>`;
+
+  if (missed.length > 0) {
+    html += `
+      <div class="missed-panel">
+        <h4>⚠️ Missed Groups <span class="missed-count">${missed.length}</span></h4>
+        <p style="font-size:12px; color:#92400e; margin-bottom:10px;">These groups missed their slot. You can call them after the other groups finish.</p>
+        ${missed.map(s => `
+          <div class="missed-item">
+            <div>
+              <strong>${esc(s.name)}</strong>
+              <div class="missed-detail">${esc(s.project)} — Scheduled: ${s.slotStart} – ${s.slotEnd}</div>
+              <div class="missed-detail">Members: ${esc(s.members.join(', '))}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+  } else if (pending.length === 0 && attended.length > 0) {
+    html += `<div class="all-attended">✅ All groups attended this week's meeting!</div>`;
+  }
+  return html;
+}
+
+function render() {
+  renderClassTabs();
+  const el = document.getElementById("mainContent");
+  const cls = state.classes[state.activeClassIdx];
+
+  if (state.activeTab === "setup") {
+    const maxSlots = getMaxSlots(cls);
+    const totalMin = timeToMinutes(cls.endTime) - timeToMinutes(cls.startTime);
+    const isFull = cls.groups.length >= maxSlots;
+
+    el.innerHTML = `
+      <!-- Class Settings -->
+      <div class="settings-row">
+        <div class="form-field">
+          <label>Class Name</label>
+          <input id="clsName" value="${esc(cls.name)}">
+        </div>
+        <div class="form-field">
+          <label>Day</label>
+          <select id="clsDay">
+            ${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d =>
+              `<option ${d === cls.day ? 'selected' : ''}>${d}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Start Time</label>
+          <input type="time" id="clsStart" value="${cls.startTime}">
+        </div>
+        <div class="form-field">
+          <label>End Time</label>
+          <input type="time" id="clsEnd" value="${cls.endTime}">
+        </div>
+        <div class="form-field" style="max-width:90px">
+          <label>Slot (min)</label>
+          <input type="number" id="clsSlot" value="${cls.slotMinutes}" min="5" max="60">
+        </div>
+      </div>
+
+      <div class="capacity-bar">
+        <span>Capacity: <strong>${cls.groups.length}</strong> / ${maxSlots} groups</span>
+        <span class="hint">(${totalMin} min ÷ ${cls.slotMinutes} min)</span>
+      </div>
+
+      <h3 class="section-title">Add a Group</h3>
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Group Name</label>
+            <input id="newGroupName" placeholder="e.g. Group A">
+          </div>
+          <div class="form-field">
+            <label>Project Title</label>
+            <input id="newGroupProject" placeholder="e.g. AI Chatbot System">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Members <span class="hint">(comma-separated)</span></label>
+          <input id="newGroupMembers" placeholder="e.g. Alice, Bob, Charlie, Diana">
+        </div>
+        <button class="btn-add" onclick="addGroup()" ${isFull ? 'disabled' : ''}>
+          ${isFull ? `Max ${maxSlots} groups (time limit)` : '+ Add Group'}
+        </button>
+      </div>
+
+      <h3 class="section-title">Current Groups (${cls.groups.length})</h3>
+      ${cls.groups.length ? `
+        <div class="group-list">
+          ${cls.groups.map(g => `
+            <div class="group-chip">
+              <div>
+                <strong>${esc(g.name)}</strong>
+                <div class="project">${esc(g.project)}</div>
+                <div class="members">${esc(g.members.join(', '))} (${g.members.length} members)</div>
+              </div>
+              <button class="btn-remove" onclick="removeGroup('${g.id}')">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      ` : '<p class="empty-msg">No groups added yet. Add groups above.</p>'}
+    `;
+
+    // Attach settings change listeners
+    ['clsName','clsDay','clsStart','clsEnd','clsSlot'].forEach(id => {
+      const input = document.getElementById(id);
+      if (input) input.addEventListener('change', updateClassSettings);
+    });
+
+  } else {
+    // Schedule view
+    const otherIdx = 1 - state.activeClassIdx;
+    const otherCls = state.classes[otherIdx];
+    const schedule = generateSchedule(cls, state.selectedWeek);
+    const otherSchedule = generateSchedule(otherCls, state.selectedWeek);
+
+    el.innerHTML = `
+      <div class="week-selector">
+        <span class="week-label">Select Week:</span>
+        <div class="week-btns">
+          ${WEEKS.map(w => `
+            <button class="week-btn ${w === state.selectedWeek ? 'active' : ''}" onclick="setWeek(${w})">${w}</button>
+          `).join('')}
+        </div>
+      </div>
+
+      ${renderScheduleTable(schedule, cls, state.selectedWeek, true)}
+      ${renderMissedPanel(schedule, cls, state.selectedWeek)}
+
+      ${state.classes.length > 1 ? `
+        <h3 class="section-title">${esc(otherCls.name)}</h3>
+        ${renderScheduleTable(otherSchedule, otherCls, state.selectedWeek, true)}
+        ${renderMissedPanel(otherSchedule, otherCls, state.selectedWeek)}
+      ` : ''}
+
+      <details>
+        <summary>📋 Printable View — All Classes, Week ${state.selectedWeek}</summary>
+        <div class="print-section">
+          <h2 class="print-title">Capstone Supervision Schedule — Week ${state.selectedWeek}</h2>
+          ${state.classes.map(c => {
+            const sch = generateSchedule(c, state.selectedWeek);
+            return `
+              <h3 class="print-class-title">${esc(c.name)} — ${esc(c.day)}</h3>
+              <p class="print-time">${minutesToTime(timeToMinutes(c.startTime))} – ${minutesToTime(timeToMinutes(c.endTime))} | ${c.slotMinutes} min per group</p>
+              ${sch.length ? renderScheduleTable(sch, c, state.selectedWeek, false) : '<p class="empty-msg">No groups configured.</p>'}
+            `;
+          }).join('')}
+        </div>
+      </details>
+
+      <details>
+        <summary>📆 Full Semester Overview (Weeks 2–11)</summary>
+        <div class="print-section">
+          ${WEEKS.map(w => `
+            <h2 class="print-title">Capstone Supervision Schedule — Week ${w}</h2>
+            ${state.classes.map(c => {
+              const sch = generateSchedule(c, w);
+              return `
+                <h3 class="print-class-title">${esc(c.name)} — ${esc(c.day)}</h3>
+                <p class="print-time">${minutesToTime(timeToMinutes(c.startTime))} – ${minutesToTime(timeToMinutes(c.endTime))} | ${c.slotMinutes} min per group</p>
+                ${sch.length ? renderScheduleTable(sch, c, w, false) : '<p class="empty-msg">No groups configured.</p>'}
+              `;
+            }).join('')}
+            <hr style="margin:24px 0; border:none; border-top:2px dashed var(--border);">
+          `).join('')}
+        </div>
+      </details>
+    `;
+  }
+}
+
+// ===================== ACTIONS =====================
+function updateClassSettings() {
+  const cls = state.classes[state.activeClassIdx];
+  cls.name = document.getElementById('clsName').value;
+  cls.day = document.getElementById('clsDay').value;
+  cls.startTime = document.getElementById('clsStart').value;
+  cls.endTime = document.getElementById('clsEnd').value;
+  cls.slotMinutes = parseInt(document.getElementById('clsSlot').value) || 20;
+  saveData();
+  render();
+}
+
+function addGroup() {
+  const name = document.getElementById('newGroupName').value.trim();
+  const project = document.getElementById('newGroupProject').value.trim();
+  const membersRaw = document.getElementById('newGroupMembers').value;
+  if (!name || !project || !membersRaw.trim()) {
+    alert('Please fill in all fields (Group Name, Project Title, and Members).');
+    return;
+  }
+  const members = membersRaw.split(',').map(m => m.trim()).filter(Boolean);
+  if (!members.length) { alert('Please enter at least one member.'); return; }
+
+  state.classes[state.activeClassIdx].groups.push({ id: uid(), name, project, members });
+  saveData();
+  render();
+}
+
+function removeGroup(groupId) {
+  const cls = state.classes[state.activeClassIdx];
+  cls.groups = cls.groups.filter(g => g.id !== groupId);
+  saveData();
+  render();
+}
+
+function resetAll() {
+  if (!confirm('Reset all data? This cannot be undone.')) return;
+  state.classes = JSON.parse(JSON.stringify(defaultClasses));
+  state.attendance = {};
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  render();
+}
+
+function exportData() {
+  const data = {
+    _app: "capstone-scheduler",
+    _exportedAt: new Date().toISOString(),
+    classes: state.classes,
+    attendance: state.attendance
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `capstone-scheduler-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showMessage('✅ Data exported successfully!');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.classes || !Array.isArray(data.classes)) {
+        alert('Invalid file format. Please select a valid Capstone Scheduler export file.');
+        return;
+      }
+      // Validate each class has required fields
+      for (const cls of data.classes) {
+        if (!cls.id || !cls.name || !cls.startTime || !cls.endTime || !Array.isArray(cls.groups)) {
+          alert('Invalid file format. Some class data is missing or corrupted.');
+          return;
+        }
+      }
+      if (!confirm(`Import ${data.classes.length} class(es) with ${data.classes.reduce((t,c) => t + c.groups.length, 0)} total group(s)?\n\nThis will replace all current data.`)) return;
+      state.classes = data.classes;
+      state.attendance = data.attendance || {};
+      saveData();
+      render();
+      showMessage('✅ Data imported successfully!');
+    } catch(err) {
+      alert('Error reading file. Make sure it is a valid JSON export file.');
+    }
+  };
+  reader.readAsText(file);
+  // Reset file input so the same file can be re-imported
+  event.target.value = '';
+}
+
+function showMessage(text) {
+  const msg = document.createElement('div');
+  msg.className = 'import-msg';
+  msg.textContent = text;
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 2600);
+}
+
+// ===================== INIT =====================
+loadData();
+render();
+</script>
+</body>
+</html>
